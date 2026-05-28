@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AB InBev | Synegy Engine</title>
+    <style>
+        :root {
+            --primary: #c41230; --dark: #0b1120; --surface: #1e293b;
+            --light: #f8fafc; --success: #10b981; --warning: #f59e0b;
+            --danger: #ef4444; --info: #3b82f6; --border: #334155;
+            --text-main: #f1f5f9; --text-muted: #94a3b8;
+        }
+
+        * { box-sizing: border-box; font-family: 'Inter', -apple-system, sans-serif; }
+        body { background-color: var(--dark); color: var(--text-main); margin: 0; padding: 25px 40px; min-height: 100vh; position: relative;}
+
+        .header { border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: flex-end;}
+        .header h1 { margin: 0; color: var(--light); font-size: 2rem; letter-spacing: -0.5px; }
+        .header .subtitle { color: var(--primary); font-size: 0.9rem; text-transform: uppercase; font-weight: 800; letter-spacing: 1.5px; margin-top: 5px; }
+        
+        .dashboard-grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 30px; padding-bottom: 60px;}
+
+        /* Left Panel */
+        .input-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 15px;}
+        h2 { font-size: 1.1rem; color: var(--light); margin-top: 0; margin-bottom: 5px; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+
+        .finance-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .control-box { background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 12px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; align-items: center;}
+        .control-box label { font-weight: 800; font-size: 0.8rem; text-transform: uppercase; text-align: center; color: var(--text-muted);}
+        .control-box input { background: var(--dark); border: 1px solid var(--border); color: var(--light); font-weight: 900; font-size: 1.2rem; padding: 6px 10px; border-radius: 6px; width: 90px; text-align: center;}
+        
+        /* Fixed Amortization Toggle */
+        .capex-toggle { background: rgba(59, 130, 246, 0.1); border: 1px solid var(--info); padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s; user-select: none;}
+        .capex-toggle:hover { background: rgba(59, 130, 246, 0.2); }
+        .capex-label { color: var(--info); font-weight: 800; font-size: 0.85rem; text-transform: uppercase;}
+        
+        /* Risk Slider */
+        .risk-box { background: rgba(245, 158, 11, 0.1); border: 1px solid var(--warning); padding: 15px; border-radius: 8px; }
+        .risk-header { display: flex; justify-content: space-between; margin-bottom: 10px; color: var(--warning); font-weight: 800; font-size: 0.85rem; text-transform: uppercase;}
+        input[type=range] { width: 100%; accent-color: var(--warning); cursor: pointer;}
+
+        .category-card { background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 8px; padding: 15px; border-left: 4px solid transparent; }
+        .card-prem { border-left-color: var(--danger); }
+        .card-sp { border-left-color: var(--warning); }
+        .cat-title { font-weight: 800; margin-bottom: 10px; text-transform: uppercase; font-size: 0.9rem;}
+        
+        .input-group { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .input-group label { color: var(--text-muted); font-size: 0.85rem; font-weight: 600; }
+        .input-group input { background: var(--dark); border: 1px solid var(--border); color: var(--light); font-size: 1.1rem; font-weight: bold; padding: 6px; border-radius: 6px; width: 100px; text-align: right; }
+
+        .gap-display { text-align: right; font-size: 0.9rem; color: var(--info); font-weight: bold; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+
+        /* Logic Box */
+        .logic-box { background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 0.75rem; color: var(--text-muted); line-height: 1.5;}
+        .logic-box strong { color: var(--light); }
+        .logic-title { font-weight: 800; color: var(--primary); text-transform: uppercase; margin-bottom: 6px; font-size: 0.8rem;}
+
+        /* Right Panel */
+        .output-section { display: flex; flex-direction: column; gap: 15px; }
+
+        /* Breakeven Banner */
+        .breakeven-banner { background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1)); border: 1px solid var(--info); padding: 15px; border-radius: 12px; text-align: center; }
+        .be-label { color: var(--info); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem; margin-bottom: 5px;}
+        .be-val { font-size: 2.2rem; font-weight: 900; color: var(--light); line-height: 1;}
+        .be-subtext { margin-top: 8px; font-size: 0.85rem; color: var(--text-muted); font-weight: 600;}
+
+        .financial-math { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 15px 20px; display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: center; text-align: center; gap: 10px;}
+        .math-col { display: flex; flex-direction: column; gap: 5px; }
+        .math-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; }
+        .math-val { font-size: 1.3rem; font-weight: 900; color: var(--light); }
+        .math-operator { font-size: 1.5rem; font-weight: 900; color: var(--text-muted); }
+        .val-profit { color: var(--success); }
+        .val-loss { color: var(--danger); }
+
+        .asset-container { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; flex-grow: 1;}
+        
+        .list-section { margin-bottom: 20px; }
+        .list-section-title { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 10px; letter-spacing: 1px; display: flex; justify-content: space-between;}
+        
+        .list-item { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 10px 15px; border-radius: 8px; margin-bottom: 6px; border-left: 3px solid var(--border); }
+        .type-push { border-left-color: #8b5cf6; }
+        .type-pull { border-left-color: var(--info); }
+        
+        .item-details { display: flex; align-items: center; gap: 12px; }
+        .item-qty { font-size: 1rem; font-weight: 900; background: var(--dark); padding: 4px 10px; border-radius: 6px; color: var(--light); min-width: 35px; text-align: center;}
+        .item-name { font-weight: 600; font-size: 0.95rem; color: var(--light); }
+        .item-cost { font-family: monospace; font-size: 1rem; color: var(--text-muted); }
+        .amortized-badge { font-size: 0.65rem; background: var(--info); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 8px; text-transform: uppercase; font-weight: bold;}
+
+        /* Floating Link Icon */
+        .portfolio-link {
+            position: fixed;
+            bottom: 30px;
+            right: 40px;
+            background-color: var(--primary);
+            color: var(--light);
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(196, 18, 48, 0.4);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            cursor: pointer;
+        }
+
+        .portfolio-link:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(196, 18, 48, 0.6);
+            background-color: #e01438;
+        }
+        
+        .portfolio-link svg {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div>
+            <h1>AB InBev Trade Asset Allocation Engine</h1>
+            <div class="subtitle">Haryana Optimization • Jishnu Das</div>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="input-section">
+            <div class="finance-controls">
+                <div class="control-box">
+                    <label>Cluster Size<br>(Outlets)</label>
+                    <input type="number" id="numOutlets" value="5" min="1" oninput="calculate()">
+                </div>
+                <div class="control-box">
+                    <label>Unit Margin<br>(₹ / Case)</label>
+                    <input type="number" id="unitMargin" value="48" min="1" oninput="calculate()">
+                </div>
+            </div>
+
+            <label class="capex-toggle">
+                <div class="capex-label">Apply 3-Year CAPEX Amortization</div>
+                <input type="checkbox" id="amortizeToggle" checked onchange="calculate()" style="transform: scale(1.5); cursor: pointer;">
+            </label>
+
+            <div class="risk-box">
+                <div class="risk-header">
+                    <span>Target Achievement Risk (Sensitivity)</span>
+                    <span id="riskLabel">100%</span>
+                </div>
+                <input type="range" id="riskSlider" min="50" max="120" value="100" oninput="calculate()">
+            </div>
+
+            <div class="category-card card-prem">
+                <div class="cat-title" style="color: var(--danger);">Premium Total Volume</div>
+                <div class="input-group">
+                    <label>Historical Base</label>
+                    <input type="number" id="premPast" value="2500" min="0" oninput="calculate()">
+                </div>
+                <div class="input-group">
+                    <label>Target Committment</label>
+                    <input type="number" id="premTarget" value="3200" min="0" oninput="calculate()">
+                </div>
+                <div class="gap-display" id="premGapDisplay">+700 Cases Booked</div>
+            </div>
+
+            <div class="category-card card-sp">
+                <div class="cat-title" style="color: var(--warning);">Super Premium Total Volume</div>
+                <div class="input-group">
+                    <label>Historical Base</label>
+                    <input type="number" id="spPast" value="500" min="0" oninput="calculate()">
+                </div>
+                <div class="input-group">
+                    <label>Target Committment</label>
+                    <input type="number" id="spTarget" value="850" min="0" oninput="calculate()">
+                </div>
+                <div class="gap-display" id="spGapDisplay">+350 Cases Booked</div>
+            </div>
+
+            <div class="logic-box">
+                <div class="logic-title">Algorithm Logic Explained</div>
+                <div><strong>Cluster Pooling:</strong> Uses total aggregate gaps to unlock assets, capped physically by cluster size.</div>
+                <div style="margin-top: 4px;"><strong>Amortization:</strong> Hardware (Chillers/Booths) are CAPEX and split over 3 years. Payouts (Bud4Trade) are OPEX and hit Year 1 at 100%.</div>
+                <div style="margin-top: 4px;"><strong>Risk Adjustment:</strong> Assets are deployed based on 100% promises, but P&L and Breakeven are stress-tested against the Risk Slider delivery.</div>
+            </div>
+        </div>
+
+        <div class="output-section">
+            
+            <div class="breakeven-banner">
+                <div class="be-label">Required Breakeven Target</div>
+                <div class="be-val" id="breakevenVal">0 Cases</div>
+                <div class="be-subtext" id="breakevenSubtext">Volume required to cover the selected capital allocations.</div>
+            </div>
+
+            <div class="financial-math">
+                <div class="math-col">
+                    <div class="math-label">Risk-Adjusted Gross<br>(Actual Cases × Margin)</div>
+                    <div class="math-val" id="grossVal">₹0</div>
+                </div>
+                <div class="math-operator">-</div>
+                <div class="math-col">
+                    <div class="math-label">Calculated<br>Capital Cost</div>
+                    <div class="math-val" id="costVal">₹0</div>
+                </div>
+                <div class="math-operator">=</div>
+                <div class="math-col">
+                    <div class="math-label">Projected Net<br>Year 1 Profit</div>
+                    <div class="math-val" id="netVal">₹0</div>
+                </div>
+            </div>
+
+            <div class="asset-container">
+                <h2>Cluster Deployment Manifest</h2>
+                
+                <div class="list-section">
+                    <div class="list-section-title">
+                        <span>Step 1: OPEX (Stocking & Rewards)</span>
+                        <span style="color: #8b5cf6;">100% Hit in Year 1</span>
+                    </div>
+                    <div id="pushList"></div>
+                </div>
+
+                <div class="list-section">
+                    <div class="list-section-title">
+                        <span>Step 2: CAPEX (Visibility Hardware)</span>
+                        <span style="color: var(--info);" id="capexStatusLabel">Amortized Over 3 Years</span>
+                    </div>
+                    <div id="pullList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <a href="https://jdhatesit.github.io/abisip/" target="_blank" class="portfolio-link" title="Return to ABI Portfolio">
+        <svg viewBox="0 0 24 24">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+        </svg>
+    </a>
+
+<script>
+    function formatINR(number) { return '₹' + Math.round(number).toLocaleString('en-IN'); }
+
+    function calculate() {
+        const numOutlets = parseInt(document.getElementById('numOutlets').value) || 1;
+        const unitMargin = parseInt(document.getElementById('unitMargin').value) || 0;
+        const isAmortized = document.getElementById('amortizeToggle').checked;
+        const riskLevel = parseInt(document.getElementById('riskSlider').value);
+        
+        document.getElementById('riskLabel').innerText = `${riskLevel}% Delivery`;
+        document.getElementById('capexStatusLabel').innerText = isAmortized ? 'Amortized Over 3 Years' : 'Full Cost Hit in Year 1';
+
+        const premPast = parseInt(document.getElementById('premPast').value) || 0;
+        const premTarget = parseInt(document.getElementById('premTarget').value) || 0;
+        const spPast = parseInt(document.getElementById('spPast').value) || 0;
+        const spTarget = parseInt(document.getElementById('spTarget').value) || 0;
+
+        // 1. ASSET ALLOCATION (Based on 100% promised target)
+        const totalPremGap = Math.max(0, premTarget - premPast);
+        const totalSpGap = Math.max(0, spTarget - spPast);
+        const totalClusterGap = totalPremGap + totalSpGap;
+
+        document.getElementById('premGapDisplay').innerText = `+${totalPremGap} Promised`;
+        document.getElementById('spGapDisplay').innerText = `+${totalSpGap} Promised`;
+
+        const pushList = document.getElementById('pushList');
+        const pullList = document.getElementById('pullList');
+        pushList.innerHTML = ''; pullList.innerHTML = '';
+
+        if (totalClusterGap === 0) {
+            document.getElementById('grossVal').innerText = '₹0';
+            document.getElementById('costVal').innerText = '₹0';
+            document.getElementById('netVal').innerText = '₹0';
+            document.getElementById('netVal').className = 'math-val';
+            document.getElementById('breakevenVal').innerText = '0 Cases';
+            document.getElementById('breakevenSubtext').innerText = 'No incremental targets committed.';
+            return;
+        }
+
+        let totalCost = 0;
+        let pushHtml = ''; let pullHtml = '';
+
+        const addItem = (qty, name, fullCost, type) => {
+            let actualCost = fullCost;
+            let badge = '';
+            
+            // Apply amortization ONLY to pull assets (hardware), not OPEX (payouts/trips)
+            if (type === 'pull' && isAmortized) {
+                actualCost = fullCost / 3;
+                badge = '<span class="amortized-badge">CAPEX</span>';
+            }
+
+            const itemTotalCost = qty * actualCost;
+            totalCost += itemTotalCost;
+            const html = `
+                <div class="list-item type-${type}">
+                    <div class="item-details"><div class="item-qty">${qty}</div><div class="item-name">${name} ${badge}</div></div>
+                    <div class="item-cost">${formatINR(itemTotalCost)}</div>
+                </div>`;
+            if(type === 'push') pushHtml += html; else pullHtml += html;
+        };
+
+        // PUSH (OPEX)
+        addItem(totalClusterGap, 'Bud4Trade Payouts', 48, 'push');
+        
+        // HARD CAP: Maximum 1 Match Trip per cluster
+        const rawTrips = Math.floor(totalClusterGap / 1500);
+        const cappedTrips = Math.min(1, rawTrips);
+        if (cappedTrips > 0) addItem(cappedTrips, 'Match Trip Reward (Max 1)', 500000, 'push');
+
+        // PULL (CAPEX - Knapsack with caps)
+        let remPrem = totalPremGap;
+        let chillerCount = Math.min(numOutlets, Math.floor(remPrem / 240));
+        if (chillerCount > 0) { addItem(chillerCount, 'Premium Chillers', 40000, 'pull'); remPrem -= (chillerCount * 240); }
+        
+        let neonCount = Math.min(numOutlets * 2, Math.floor(remPrem / 60));
+        if (neonCount > 0) addItem(neonCount, 'Neon Signage', 15000, 'pull');
+
+        let remSp = totalSpGap;
+        let maskCount = Math.min(numOutlets, Math.floor(remSp / 200));
+        if (maskCount > 0) { addItem(maskCount, 'Corona Maskings', 100000, 'pull'); remSp -= (maskCount * 200); }
+        
+        let boothCount = Math.min(numOutlets, Math.floor(remSp / 120));
+        if (boothCount > 0) { addItem(boothCount, 'Hoegaarden Booths', 50000, 'pull'); remSp -= (boothCount * 120); }
+        
+        let trolleyCount = Math.min(numOutlets * 4, Math.floor(remSp / 30));
+        if (trolleyCount > 0) addItem(trolleyCount, 'Corona Trolleys', 5000, 'pull');
+
+        pushList.innerHTML = pushHtml || '<div style="color:var(--text-muted); font-size:0.8rem;">None allocated.</div>';
+        pullList.innerHTML = pullHtml || '<div style="color:var(--text-muted); font-size:0.8rem;">Target insufficient for hardware.</div>';
+
+        // 2. FINANCIAL MATH (Risk Adjusted)
+        const actualDeliveredCases = totalClusterGap * (riskLevel / 100);
+        const riskAdjustedGross = actualDeliveredCases * unitMargin;
+        const netProfit = riskAdjustedGross - totalCost;
+        
+        // Calculate Breakeven based on the active cost (Amortized vs Unamortized)
+        const breakevenCases = unitMargin > 0 ? Math.ceil(totalCost / unitMargin) : 0;
+
+        document.getElementById('grossVal').innerText = formatINR(riskAdjustedGross);
+        document.getElementById('costVal').innerText = formatINR(totalCost);
+        
+        const netEl = document.getElementById('netVal');
+        netEl.innerText = formatINR(netProfit);
+        if (netProfit >= 0) {
+            netEl.className = 'math-val val-profit';
+            netEl.innerText = '+' + formatINR(netProfit);
+        } else {
+            netEl.className = 'math-val val-loss';
+        }
+
+        // UPDATE BREAKEVEN BANNER
+        document.getElementById('breakevenVal').innerText = breakevenCases.toLocaleString('en-IN') + ' Cases';
+        
+        // Variance checks against the Risk-Adjusted Delivery, not the 100% promised target
+        const variance = actualDeliveredCases - breakevenCases;
+        const subtextEl = document.getElementById('breakevenSubtext');
+        
+        if (variance >= 0) {
+            subtextEl.innerHTML = `At ${riskLevel}% delivery, the cluster exceeds breakeven by <strong style="color:var(--success);">+${Math.round(variance).toLocaleString('en-IN')} cases</strong>.`;
+        } else {
+            subtextEl.innerHTML = `⚠️ DANGER: At ${riskLevel}% delivery, the cluster falls <strong style="color:var(--danger);">${Math.abs(Math.round(variance)).toLocaleString('en-IN')} cases short</strong> of profitability.`;
+        }
+    }
+
+    window.onload = calculate;
+</script>
+
+</body>
+</html>
